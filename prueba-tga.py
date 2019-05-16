@@ -7,9 +7,8 @@ import matplotlib.pyplot as pp
 import sys
 import argparse
 
-#import matplotlib.axes as ax
 
-# acá se cambia el camino
+
 
 print(str(sys.argv))
 
@@ -33,27 +32,20 @@ if args.E:
 if args.NT:
     nT = args.NT
 
-print("Energía de activación : " + str(Eref))
-
-inputFile = open("PMMA.csv")
-outputFile = open("PMMA-salida.csv",'w')
+print(f'Energía de activación : {Eref}')
 
 T = np.array([])
 E = np.array([])
 
+# acá se cambia el camino
+with open('PMMA.csv') as inputFile:
+    for line in inputFile:
+        l = line.split(";")
+        T = np.append(T, float(l[1]))
+        E = np.append(E, float(l[4]))
 
-for line in inputFile:
-    #print " ".join(line.split())
-    #print line
-    l = line.split(";")
-    #print linecita
-    T = np.append(T, float(l[1]))
-    E = np.append(E, float(l[4]))
-    #lC.append(float(l[2]))
-    
-    
-inputFile.close()
-#file2.close()
+inputDF = pd.read_csv('PMMA.csv', sep=';')     
+
 
 #E = 320000
 R = 8.314
@@ -127,6 +119,8 @@ print("tamaño de ltf: " + str(ltf.size))
 print("tamaño de T: " + str(T.size))
 print("tamaño de E: " + str(E.size))
 
+
+outputFile = open("PMMA-salida.csv",'w')
 # escribir un archivo con columnas T, 1000/T, ltf, tf
 for ti, ltfi, tfi in zip(T, ltf, tf):
     outputFile.write(str(ti) + "; " + str(1000/ti) + "; " + str(ltfi) + "; " + str(tfi) + "\n")
