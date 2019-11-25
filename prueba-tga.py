@@ -1,54 +1,93 @@
 import pandas as pd
 import scipy.integrate as integrate
 import scipy.special as special
-from math import exp, inf, log
+from math import exp, inf, log, log10
 import numpy as np
 import matplotlib.pyplot as pp
 import sys
 import argparse
 
+#import matplotlib.axes as ax
 
-
+# acá se cambia el camino
 
 print(str(sys.argv))
 
 Eref = 0.0
-Tinf = 0.0
-Tsup = 100.0
-nT = 1
+tfi = 0.0
+tfs = 100.0
+nt = 1
+R = 8.31451
 
 parser = argparse.ArgumentParser()
 parser.add_argument("--E", help="Energía de activación (J)", type=float)
-parser.add_argument("--TI", help="Límite inferior de temperatura (K)", type=float)
-parser.add_argument("--TS", help="Límite superior de temperatura (K)", type=float)
-parser.add_argument("--NT", help="Pasos de temperatura", type=int)
+parser.add_argument("--Tc", help="Temperatura de falla (K)", type=float)
+parser.add_argument("--tfi", help="Límite inferior de tiempo (min)", type=float)
+parser.add_argument("--tfs", help="Límite superior de tiempo (min)", type=float)
+parser.add_argument("--nt", help="Pasos de temperatura", type=int)
+parser.add_argument("--beta", help="Tasa de calentamiento (K/min)", type=float)
 args = parser.parse_args()
 if args.E:
     Eref = args.E 
-if args.E:
-    Tinf = args.TI 
-if args.E:
-    Tsup = args.TS 
-if args.NT:
-    nT = args.NT
+if args.Tc:
+    Tc = args.Tc 
+if args.tfi:
+    tfi = args.tfi 
+if args.tfs:
+    tfs = args.tfs
+if args.nt:
+    nt = args.nt
+if args.beta:
+    beta = args.beta 
 
-print(f'Energía de activación : {Eref}')
+print("Energía de activación : " + str(Eref))
+
+tf = np.linspace(tfi, tfs, nt)
+TI = np.array([])
+invTI = np.array([])
+
+for tfi in tf:
+    TIi = (Eref/(2.303*R))/((log10(100.4*tfi*beta*(R/Eref)))+((0.463*Eref)/(R*Tc)))
+    invTIi = 1000/(TIi)
+    TI = np.append(TI, TIi)
+    invTI = np.append(invTI, invTIi)
+
+
+print("tf: " + str(tf))
+print("TI: " + str(TI))
+print("invTI: " + str(invTI))
+
+inputFile = open("PMMA.csv")
+#outputFile = open("PMMA-salida.csv",'w')
+outputFile = open("lifetime.csv",'w')
+
+for tfi, TIi, invTIi in zip(tf, TI, invTI):
+    outputFile.write(str(tfi) + "; " + str(TIi) + "; " + str(invTIi) + "\n")
+
+outputFile.close()
 
 T = np.array([])
 E = np.array([])
 
-# acá se cambia el camino
-with open('PMMA.csv') as inputFile:
-    for line in inputFile:
-        l = line.split(";")
-        T = np.append(T, float(l[1]))
-        E = np.append(E, float(l[4]))
 
-inputDF = pd.read_csv('PMMA.csv', sep=';')     
+for line in inputFile:
+    #print " ".join(line.split())
+    #print line
+    l = line.split(";")
+    #print linecita
+    T = np.append(T, float(l[1]))
+    E = np.append(E, float(l[4]))
+    #lC.append(float(l[2]))
+    
+    
+inputFile.close()
+#file2.close()
 
 
-#E = 320000
-R = 8.314
+
+
+#E = 187000
+
 #T = np.array([773.15, 900])
 #T = np.linspace(873.15, 298.15, 10)
 #E = np.array([270.977,270.935,270.893,270.85,270.808,270.766,270.724,270.682,270.64,270.598,270.556,270.514,270.472,270.43,270.388,270.346,270.304,270.262,270.22,270.178,270.136,270.094,270.052])
@@ -58,13 +97,13 @@ R = 8.314
 #T = T + 273.15
 #T = np.array([512.48,512.477,512.474,512.47,512.467,512.464,512.46,512.457,512.454,512.45])
 #print("Valor de T: "+str(T))
-beta = 2
+
 Z = np.array([])
 #for ei, ti in zip(E,T):
 #    zi = ei/(R*ti)
 #    Z = np.append(Z, zi)
 
-T = np.linspace(Tsup, Tinf, nT)
+T = np.linspace(tfi, tfs, nt)
 
 for ti in T:
     zi = Eref/(R*ti)
@@ -119,8 +158,6 @@ print("tamaño de ltf: " + str(ltf.size))
 print("tamaño de T: " + str(T.size))
 print("tamaño de E: " + str(E.size))
 
-
-outputFile = open("PMMA-salida.csv",'w')
 # escribir un archivo con columnas T, 1000/T, ltf, tf
 for ti, ltfi, tfi in zip(T, ltf, tf):
     outputFile.write(str(ti) + "; " + str(1000/ti) + "; " + str(ltfi) + "; " + str(tfi) + "\n")
